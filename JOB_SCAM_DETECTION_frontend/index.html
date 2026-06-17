@@ -58,11 +58,9 @@
         </div>
 
         <div class="search-box">
-          <input
-            type="text"
-            id="jobUrl"
-            placeholder="Paste job or internship URL here"
-          />
+          <input type="text" id="jobUrl" placeholder="Paste job or internship URL here" />
+          <input type="text" id="jobTitle" placeholder="Job title (e.g. Data Entry Intern)" />
+          <textarea id="jobDescription" placeholder="Paste the job description here for the most accurate result" rows="4"></textarea>
           <button onclick="checkJob()">Analyze Job</button>
         </div>
       </section>
@@ -106,19 +104,19 @@
           <article>
             <span class="status-dot orange"></span>
             <strong>Scam Score</strong>
-            <p>--</p>
+            <p id="scamScoreValue">--</p>
           </article>
 
           <article>
             <span class="status-dot red"></span>
             <strong>Risk Level</strong>
-            <p>--</p>
+            <p id="riskLevelValue">--</p>
           </article>
 
           <article>
             <span class="status-dot green"></span>
             <strong>Domain Trust</strong>
-            <p>--</p>
+            <p id="domainTrustValue">--</p>
           </article>
         </div>
       </section>
@@ -199,6 +197,8 @@
     </main>
 
     <script src="./js/supabase.js"></script>
+    <script src="./js/api.js"></script>
+    <script src="./js/scan.js"></script>
     <script src="./js/home.js"></script>
   </body>
 </html>
