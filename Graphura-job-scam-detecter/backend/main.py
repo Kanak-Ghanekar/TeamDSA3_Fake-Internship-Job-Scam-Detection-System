@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from backend.api.router import api_router
+from api.router import api_router
 from backend.core.config import get_settings
 from backend.core.logging import setup_logging
 
