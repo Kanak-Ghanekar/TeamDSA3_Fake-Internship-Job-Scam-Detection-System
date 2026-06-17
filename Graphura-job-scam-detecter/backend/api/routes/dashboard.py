@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from backend.db.supabase import SupabaseClient, get_supabase_client
-from backend.models.schemas import DashboardResponse
-from backend.services.dashboard_service import DashboardService
+from db.supabase import SupabaseClient, get_supabase_client
+from models.schemas import DashboardResponse
+from services.dashboard_service import DashboardService
 
 router = APIRouter(tags=["dashboard"])
 
