@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
 
-from backend.core.security import (
+from core.security import (
     TEST_ACCOUNTS, USER_REGISTRY, get_password_hash, verify_password, create_access_token
 )
 
