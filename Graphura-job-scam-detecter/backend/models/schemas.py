@@ -59,3 +59,17 @@ class RecruiterCheckResponse(BaseModel):
     is_verified: bool
     risk_score: float
     reasons: list[str] = Field(default_factory=list)
+    
+
+class ReportRequest(BaseModel):
+    job_title: Optional[str] = None
+    company_name: Optional[str] = None
+    description: Optional[str] = None
+    reporter_email: Optional[str] = None
+    reason: Optional[str] = None
+    evidence_url: Optional[str] = None
+
+
+class ReportResponse(BaseModel):
+    message: str
+    report_id: Optional[str] = None
