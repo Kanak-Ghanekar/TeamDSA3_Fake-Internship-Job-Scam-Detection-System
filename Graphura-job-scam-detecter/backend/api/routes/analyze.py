@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from backend.core.config import get_settings
-from backend.db.supabase import SupabaseClient, get_supabase_client
-from backend.models.schemas import AnalyzeRequest, AnalyzeResponse
-from backend.services.analysis_service import AnalysisService
+from core.config import get_settings
+from db.supabase import SupabaseClient, get_supabase_client
+from models.schemas import AnalyzeRequest, AnalyzeResponse
+from services.analysis_service import AnalysisService
 
 router = APIRouter(tags=["analysis"])
 analysis_service = AnalysisService()
