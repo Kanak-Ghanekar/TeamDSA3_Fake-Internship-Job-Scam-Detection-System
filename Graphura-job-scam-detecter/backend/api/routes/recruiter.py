@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from backend.db.supabase import SupabaseClient, get_supabase_client
-from backend.models.schemas import RecruiterCheckRequest, RecruiterCheckResponse
-from backend.services.recruiter_service import RecruiterService
+from db.supabase import SupabaseClient, get_supabase_client
+from models.schemas import RecruiterCheckRequest, RecruiterCheckResponse
+from services.recruiter_service import RecruiterService
 
 router = APIRouter(tags=["recruiter"])
 
