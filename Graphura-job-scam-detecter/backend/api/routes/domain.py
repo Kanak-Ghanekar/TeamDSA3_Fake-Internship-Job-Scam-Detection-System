@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from backend.db.supabase import SupabaseClient, get_supabase_client
-from backend.models.schemas import DomainCheckRequest, DomainCheckResponse
-from backend.services.domain_service import DomainService
+from db.supabase import SupabaseClient, get_supabase_client
+from models.schemas import DomainCheckRequest, DomainCheckResponse
+from services.domain_service import DomainService
 
 router = APIRouter(tags=["domain"])
 
