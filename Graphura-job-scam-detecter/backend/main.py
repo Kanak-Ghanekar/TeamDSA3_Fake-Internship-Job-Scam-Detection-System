@@ -13,8 +13,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
 from api.router import api_router
-from backend.core.config import get_settings
-from backend.core.logging import setup_logging
+from core.config import get_settings
+from core.logging import setup_logging
 
 settings = get_settings()
 
@@ -83,7 +83,7 @@ def read_root():
 @app.on_event("startup")
 async def startup_event() -> None:
     # Fail fast on missing Supabase configuration.
-    from backend.core.startup import validate_supabase_startup
+    from core.startup import validate_supabase_startup
 
     validate_supabase_startup(fail_fast=not settings.debug)
 
