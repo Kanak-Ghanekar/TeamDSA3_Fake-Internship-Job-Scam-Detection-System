@@ -1,0 +1,244 @@
+.home-dashboard-page .home-hero h1 {
+  max-width: 780px;
+}
+
+.scanner-panel {
+  margin-top: 18px;
+}
+
+.search-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.search-box input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: 8px;
+  outline: none;
+  color: var(--dash-ink);
+  background: #f8fafc;
+  font-size: 15px;
+  transition:
+    border 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.search-box input:focus {
+  border-color: var(--dash-blue);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.search-box button {
+  min-height: 56px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--dash-blue), #0891b2);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.search-box button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.2);
+}
+
+.result-card,
+.keyword-section {
+  display: none;
+  margin-top: 18px;
+}
+
+.result-grid,
+.steps {
+  display: grid;
+  gap: 16px;
+}
+
+.result-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.result-grid article,
+.step {
+  min-height: 138px;
+  padding: 18px;
+  border: 1px solid var(--dash-line);
+  border-radius: 8px;
+  background: #f8fafc;
+  transition:
+    transform 180ms ease,
+    border 180ms ease,
+    background 180ms ease;
+}
+
+.result-grid article:hover,
+.feature-card:hover,
+.step:hover {
+  transform: translateY(-3px);
+  border-color: rgba(37, 99, 235, 0.34);
+  background: #ffffff;
+}
+
+.result-grid strong,
+.step strong {
+  display: block;
+  color: var(--dash-ink);
+  font-size: 17px;
+}
+
+.result-grid p {
+  margin: 16px 0 0;
+  color: var(--dash-muted);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.status-dot,
+.feature-dot {
+  display: inline-block;
+  border-radius: 999px;
+}
+
+.status-dot {
+  width: 13px;
+  height: 13px;
+  margin-bottom: 24px;
+}
+
+.status-dot.green,
+.feature-dot.green {
+  background: var(--dash-green);
+  box-shadow: 0 0 0 8px rgba(15, 159, 110, 0.1);
+}
+
+.status-dot.orange {
+  background: var(--dash-orange);
+  box-shadow: 0 0 0 8px rgba(217, 119, 6, 0.1);
+}
+
+.status-dot.red {
+  background: var(--dash-red);
+  box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.1);
+}
+
+#keywordContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.keyword {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 999px;
+  color: #9f1239;
+  background: #fff1f2;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.feature-section,
+.how-it-works,
+.footer {
+  margin-top: 18px;
+}
+
+.feature-card {
+  min-height: 230px;
+  transition:
+    transform 180ms ease,
+    border 180ms ease,
+    background 180ms ease;
+}
+
+.feature-dot {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 26px;
+}
+
+.feature-dot.blue {
+  background: var(--dash-blue);
+  box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.1);
+}
+
+.feature-card h2 {
+  margin: 0 0 10px;
+  color: var(--dash-ink);
+  font-size: 20px;
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--dash-muted);
+  line-height: 1.6;
+}
+
+.steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.step span {
+  display: block;
+  margin-bottom: 34px;
+  color: var(--dash-blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.footer h2 {
+  margin: 0;
+  color: var(--dash-ink);
+  font-size: 20px;
+}
+
+.footer-link {
+  flex-shrink: 0;
+  padding: 11px 14px;
+  border-radius: 8px;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--dash-blue), #0891b2);
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .search-box,
+  .result-grid,
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .search-box button {
+    width: 100%;
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

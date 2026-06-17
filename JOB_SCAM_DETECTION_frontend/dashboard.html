@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Graphura Dashboard</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/dashboard.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+
+  <body class="dashboard-page">
+    <nav class="dashboard-navbar" aria-label="Primary navigation">
+      <a class="brand-mark" href="index.html" aria-label="Graphura home">
+        <span class="brand-icon">G</span>
+        <span>
+          <strong>Graphura India Pvt Ltd</strong>
+          <small>Scam Intelligence</small>
+        </span>
+      </a>
+
+      <div class="top-nav-links">
+        <a href="index.html">Home</a>
+        <a href="index.html#checker">Scam Checker</a>
+        <a href="reports.html">Reports</a>
+        <a href="verify.html">Recruiters</a>
+        <a class="active" href="dashboard.html">Dashboard</a>
+      </div>
+    </nav>
+
+    <main class="dashboard-shell">
+      <header class="dashboard-hero">
+        <div>
+          <p class="eyebrow">Live job-post monitoring</p>
+          <h1>Risk Overview</h1>
+          <p class="hero-copy">
+            Track collected job posts, suspicious sources, and hiring patterns
+            from one focused command center.
+          </p>
+        </div>
+
+        <div class="hero-status" aria-label="Dashboard status">
+          <span class="pulse-dot"></span>
+          <span>Connected to Supabase</span>
+        </div>
+      </header>
+
+      <section class="metric-grid" aria-label="Dashboard metrics">
+        <article class="metric-card accent-blue">
+          <span class="metric-label">Total Jobs</span>
+          <strong id="totalJobs">0</strong>
+          <small>Posts scanned in database</small>
+        </article>
+
+        <article class="metric-card accent-green">
+          <span class="metric-label">Companies</span>
+          <strong id="totalCompanies">0</strong>
+          <small>Unique employers observed</small>
+        </article>
+
+        <article class="metric-card accent-orange">
+          <span class="metric-label">Locations</span>
+          <strong id="totalLocations">0</strong>
+          <small>Hiring regions represented</small>
+        </article>
+
+        <article class="metric-card accent-red">
+          <span class="metric-label">Reports</span>
+          <strong id="totalReports">0</strong>
+          <small>User-submitted alerts</small>
+        </article>
+      </section>
+
+      <section class="insight-grid" aria-label="Dashboard charts">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Distribution</p>
+              <h2>Top Companies</h2>
+            </div>
+          </div>
+          <div class="chart-frame">
+            <canvas id="companyChart"></canvas>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Geography</p>
+              <h2>Top Locations</h2>
+            </div>
+          </div>
+          <div class="chart-frame">
+            <canvas id="locationChart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel jobs-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Latest records</p>
+            <h2>Recent Jobs</h2>
+          </div>
+          <span class="table-badge">Live table</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Job Title</th>
+                <th>Company</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+
+            <tbody id="jobsTable">
+              <tr>
+                <td colspan="3">Loading job posts...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="./js/supabase.js"></script>
+    <script src="./js/dashboard.js"></script>
+  </body>
+</html>

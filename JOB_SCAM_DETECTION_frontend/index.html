@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graphura Job Scam Detector</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/dashboard.css" />
+    <link rel="stylesheet" href="./css/home.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </head>
+
+  <body class="dashboard-page home-dashboard-page">
+    <nav class="dashboard-navbar" aria-label="Primary navigation">
+      <a class="brand-mark" href="index.html" aria-label="Graphura home">
+        <span class="brand-icon">G</span>
+        <span>
+          <strong>Graphura India Pvt Ltd</strong>
+          <small>Scam Intelligence</small>
+        </span>
+      </a>
+
+      <div class="top-nav-links">
+        <a class="active" href="index.html">Home</a>
+        <a href="#checker">Scam Checker</a>
+        <a href="reports.html">Reports</a>
+        <a href="verify.html">Recruiters</a>
+        <a href="dashboard.html">Dashboard</a>
+      </div>
+    </nav>
+
+    <main class="dashboard-shell">
+      <header id="checker" class="dashboard-hero home-hero">
+        <div>
+          <p class="eyebrow">AI-powered job scam detection</p>
+          <h1>Scan suspicious job posts before you apply.</h1>
+          <p class="hero-copy">
+            Detect fake jobs, internship scams, suspicious recruiters, and risky
+            hiring links with a focused Graphura analysis workflow.
+          </p>
+        </div>
+
+        <div class="hero-status" aria-label="Scanner status">
+          <span class="pulse-dot"></span>
+          <span>Scanner ready</span>
+        </div>
+      </header>
+
+      <section class="panel scanner-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Primary scanner</p>
+            <h2>Job URL Analysis</h2>
+          </div>
+          <span class="table-badge">Live check</span>
+        </div>
+
+        <div class="search-box">
+          <input
+            type="text"
+            id="jobUrl"
+            placeholder="Paste job or internship URL here"
+          />
+          <button onclick="checkJob()">Analyze Job</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Platform statistics">
+        <article class="metric-card accent-blue">
+          <span class="metric-label">Total Jobs</span>
+          <strong id="totalJobs">0</strong>
+          <small>Posts scanned in database</small>
+        </article>
+
+        <article class="metric-card accent-green">
+          <span class="metric-label">Companies</span>
+          <strong id="totalCompanies">0</strong>
+          <small>Unique employers observed</small>
+        </article>
+
+        <article class="metric-card accent-orange">
+          <span class="metric-label">Locations</span>
+          <strong id="totalLocations">0</strong>
+          <small>Hiring regions represented</small>
+        </article>
+
+        <article class="metric-card accent-red">
+          <span class="metric-label">Reports</span>
+          <strong>0</strong>
+          <small>User-submitted alerts</small>
+        </article>
+      </section>
+
+      <section id="resultCard" class="panel result-card">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Analysis result</p>
+            <h2>Preliminary Scam Review</h2>
+          </div>
+          <span class="table-badge">Pending model API</span>
+        </div>
+
+        <div class="result-grid">
+          <article>
+            <span class="status-dot orange"></span>
+            <strong>Scam Score</strong>
+            <p>--</p>
+          </article>
+
+          <article>
+            <span class="status-dot red"></span>
+            <strong>Risk Level</strong>
+            <p>--</p>
+          </article>
+
+          <article>
+            <span class="status-dot green"></span>
+            <strong>Domain Trust</strong>
+            <p>--</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="keywordSection" class="panel keyword-section">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Warning keywords</p>
+            <h2>Suspicious Language Detected</h2>
+          </div>
+          <span class="table-badge">Risk signals</span>
+        </div>
+
+        <div id="keywordContainer"></div>
+      </section>
+
+      <section
+        class="insight-grid feature-section"
+        aria-label="Homepage features"
+      >
+        <article class="panel feature-card">
+          <div class="feature-dot blue"></div>
+          <h2>URL Intelligence</h2>
+          <p>
+            Review suspicious hiring links for risky domains, redirects, and
+            trust indicators.
+          </p>
+        </article>
+
+        <article class="panel feature-card">
+          <div class="feature-dot green"></div>
+          <h2>Recruiter Screening</h2>
+          <p>
+            Identify unusual contact channels, spoofing patterns, and recruiter
+            verification gaps.
+          </p>
+        </article>
+      </section>
+
+      <section class="panel how-it-works">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Workflow</p>
+            <h2>How It Works</h2>
+          </div>
+        </div>
+
+        <div class="steps">
+          <article class="step">
+            <span>01</span>
+            <strong>Paste URL</strong>
+          </article>
+
+          <article class="step">
+            <span>02</span>
+            <strong>Analyze Job</strong>
+          </article>
+
+          <article class="step">
+            <span>03</span>
+            <strong>Review Signals</strong>
+          </article>
+
+          <article class="step">
+            <span>04</span>
+            <strong>Stay Safe</strong>
+          </article>
+        </div>
+      </section>
+
+      <footer class="panel footer">
+        <div>
+          <p class="eyebrow">Graphura</p>
+          <h2>Professional job scam intelligence.</h2>
+        </div>
+        <a class="footer-link" href="dashboard.html">Open Dashboard</a>
+      </footer>
+    </main>
+
+    <script src="./js/supabase.js"></script>
+    <script src="./js/home.js"></script>
+  </body>
+</html>
