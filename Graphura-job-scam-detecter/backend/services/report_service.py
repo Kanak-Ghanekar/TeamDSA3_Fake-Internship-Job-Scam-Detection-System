@@ -10,12 +10,10 @@ class ReportService:
 
     def submit(self, payload: ReportRequest) -> ReportResponse:
         row = {
-            "Job_title": payload.job_title or "Unknown",
-            "Company_name": payload.company_name or "Unknown",
-            "Description": payload.description or "",
-            "Reporter_email": payload.reporter_email or "",
-            "Reason": payload.reason or "",
-            "Evidence_url": payload.evidence_url or "",
+            "job_id": payload.job_id,
+            "report_reason": payload.report_reason,
+            "user_comment": payload.user_comment or "",
+            "severity": payload.severity,
         }
         try:
             result = self.db.table(self.settings.supabase_scam_reports_table).insert(row).execute()
