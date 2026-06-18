@@ -62,12 +62,10 @@ class RecruiterCheckResponse(BaseModel):
     
 
 class ReportRequest(BaseModel):
-    job_title: Optional[str] = None
-    company_name: Optional[str] = None
-    description: Optional[str] = None
-    reporter_email: Optional[str] = None
-    reason: Optional[str] = None
-    evidence_url: Optional[str] = None
+    job_id: Optional[str] = None
+    report_reason: str
+    user_comment: Optional[str] = None
+    severity: float = 50.0
 
 
 class ReportResponse(BaseModel):
