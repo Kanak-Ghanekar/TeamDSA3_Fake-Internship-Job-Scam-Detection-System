@@ -71,3 +71,13 @@ class ReportRequest(BaseModel):
 class ReportResponse(BaseModel):
     message: str
     report_id: Optional[str] = None
+
+
+class ModelMetricsResponse(BaseModel):
+    model_name: str
+    accuracy: float
+    precision: float
+    recall: float
+    f1_score: float
+    confidence: float
+    trained_on_samples: int
