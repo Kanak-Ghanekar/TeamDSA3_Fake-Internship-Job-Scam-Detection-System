@@ -1,61 +1,84 @@
-function extractDomain(url) {
-  try {
-    return new URL(url).hostname.replace("www.", "");
-  } catch {
-    return url.split("//").pop().split("/")[0].replace("www.", "");
-  }
-}
-
+const BACKEND_URL = "https://teamdsa3-fake-internship-job-scam-x9bm.onrender.com";
+ 
 async function checkJob() {
-  const url = document.getElementById("jobUrl").value.trim();
-  const title = document.getElementById("jobTitle").value.trim();
-  const description = document.getElementById("jobDescription").value.trim();
-
+  const url        = document.getElementById("jobUrl")?.value.trim() || "";
+  const title      = document.getElementById("jobTitle")?.value.trim() || "";
+  const description = document.getElementById("jobDescription")?.value.trim() || "";
+ 
   if (!url && !title && !description) {
-    alert("Please enter at least a job URL, title, or description");
+    alert("Please enter at least a job URL, title, or description.");
     return;
   }
-
-  const badge = document.querySelector("#resultCard .table-badge");
-  badge.textContent = "Checking...";
-
+ 
+  // Extract domain from URL for the domain-check call
+  let domain = "";
   try {
-    const domain = url ? extractDomain(url) : "";
-
-    const analysis = await analyzeJob({
-      job_title: title || null,
-      job_description: description || null,
-      job_url: url || null,
-      domain: domain || null,
-    });
-
-    const domainResult = domain ? await checkDomain(domain) : null;
-
-    document.getElementById("scamScoreValue").textContent = `${analysis.scam_score}/100`;
-    document.getElementById("riskLevelValue").textContent = analysis.is_flagged ? "High Risk" : "Low Risk";
-    document.getElementById("domainTrustValue").textContent = domainResult
-      ? (domainResult.is_suspicious ? "Suspicious" : "Trusted")
-      : "Not checked";
-
-    const keywordContainer = document.getElementById("keywordContainer");
-    keywordContainer.innerHTML = "";
-    const reasons = [...(analysis.reasons || []), ...((domainResult && domainResult.reasons) || [])];
-
-    if (reasons.length === 0) {
-      keywordContainer.innerHTML = "<p>No suspicious signals detected.</p>";
+    if (url) domain = new URL(url).hostname.replace("www.", "");
+  } catch (_) {}
+ 
+  // Show loading state
+  setResult("scamScoreValue", "...");
+  setResult("riskLevelValue", "...");
+  setResult("domainTrustValue", "...");
+ 
+  try {
+    // Run analyze + domain-check in parallel
+    const [analyzeRes, domainRes] = await Promise.all([
+      fetch(`${BACKEND_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_title: title,
+          job_description: description,
+          job_url: url,
+          domain: domain,
+        }),
+      }),
+      domain
+        ? fetch(`${BACKEND_URL}/domain-check`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ domain }),
+          })
+        : Promise.resolve(null),
+    ]);
+ 
+    const analyze = await analyzeRes.json();
+    const domainData = domainRes ? await domainRes.json() : null;
+ 
+    // Scam score
+    const score = Math.round(analyze.scam_score ?? 0);
+    setResult("scamScoreValue", `${score} / 100`);
+ 
+    // Risk level
+    let risk = "Low";
+    if (score >= 70) risk = "High";
+    else if (score >= 35) risk = "Medium";
+    setResult("riskLevelValue", risk);
+ 
+    // Domain trust
+    if (domainData) {
+      const trust = domainData.is_suspicious ? "Suspicious" : "Looks OK";
+      setResult("domainTrustValue", trust);
     } else {
-      reasons.forEach((reason) => {
-        const tag = document.createElement("span");
-        tag.className = "keyword-tag";
-        tag.textContent = reason;
-        keywordContainer.appendChild(tag);
-      });
+      setResult("domainTrustValue", "N/A");
     }
-
-    badge.textContent = "Result ready";
+ 
+    // Show reasons if any
+    if (analyze.reasons?.length) {
+      console.info("Scam flags:", analyze.reasons);
+    }
+ 
   } catch (err) {
-    console.error(err);
-    badge.textContent = "Error";
-    alert("Something went wrong checking this job. Please try again in a moment.");
+    console.error("checkJob error:", err);
+    setResult("scamScoreValue", "Error");
+    setResult("riskLevelValue", "Error");
+    setResult("domainTrustValue", "Error");
+    alert("Could not reach the analysis server. Please try again.");
   }
+}
+ 
+function setResult(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
 }
