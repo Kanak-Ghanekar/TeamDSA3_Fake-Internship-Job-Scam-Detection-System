@@ -1,6 +1,6 @@
 const BACKEND_URL  = "https://teamdsa3-fake-internship-job-scam-9aem.onrender.com";
 const chartColors  = ["#2563eb", "#0f9f6e", "#d97706", "#dc2626", "#7c3aed"];
-
+ 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function escapeHtml(value) {
   return String(value ?? "Unknown").replace(/[&<>"']/g, c =>
@@ -25,7 +25,7 @@ function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
 }
-
+ 
 // ── recent jobs table ─────────────────────────────────────────────────────────
 function renderJobsTable(rows) {
   const tbody = document.getElementById("jobsTable");
@@ -36,12 +36,12 @@ function renderJobsTable(rows) {
   }
   tbody.innerHTML = rows.slice(0, 10).map(job => `
     <tr>
-      <td>${escapeHtml(getCol(job, ["Title","Job Title","job_title","title"]))}</td>
-      <td>${escapeHtml(getCol(job, ["Company_name","Company","company"]))}</td>
+      <td>${escapeHtml(getCol(job, ["Title","job_title","title"]))}</td>
+      <td>${escapeHtml(getCol(job, ["Company_Salary","Company_name","Company","company"]))}</td>
       <td>${escapeHtml(getCol(job, ["Location","location"]))}</td>
     </tr>`).join("");
 }
-
+ 
 // ── scam alerts table ─────────────────────────────────────────────────────────
 function riskBadge(score) {
   const s = Number(score) || 0;
@@ -67,10 +67,10 @@ function renderScamTable(rows) {
     return;
   }
   tbody.innerHTML = rows.slice(0, 6).map(row => {
-    const score = Number(row.Scam_score ?? row.scam_score ?? 0);
-    const date  = row.created_at ? new Date(row.created_at).toLocaleString() : "—";
+    const score = Math.round(Number(row.Scam_score ?? row.scam_score ?? 0) * 100);
+    const date  = row.Posted_date ? new Date(row.Posted_date).toLocaleString() : "—";
     return `<tr>
-      <td>${escapeHtml(getCol(row, ["Company_name","Company","company"]))}</td>
+      <td>${escapeHtml(getCol(row, ["Company_Salary","Company_name","Company","company"]))}</td>
       <td>${escapeHtml(getCol(row, ["Title","job_title","title"]))}</td>
       <td>${scoreBar(score)}</td>
       <td>${riskBadge(score)}</td>
@@ -78,12 +78,12 @@ function renderScamTable(rows) {
       <td style="font-size:11px;color:#687489">${date}</td>
     </tr>`;
   }).join("");
-
+ 
   // pagination label
   const label = document.getElementById("scamAlertsPagination");
   if (label) label.textContent = `Showing 1–${Math.min(rows.length,6)} of ${rows.length} scam incidents`;
 }
-
+ 
 // ── charts ────────────────────────────────────────────────────────────────────
 function renderChart(canvasId, entries, label) {
   const canvas = document.getElementById(canvasId);
@@ -105,7 +105,7 @@ function renderChart(canvasId, entries, label) {
     },
   });
 }
-
+ 
 // ── ML metrics ────────────────────────────────────────────────────────────────
 async function loadMLMetrics() {
   try {
@@ -120,32 +120,33 @@ async function loadMLMetrics() {
     // keep static fallback values already in HTML
   }
 }
-
+ 
 // ── main ──────────────────────────────────────────────────────────────────────
 async function loadDashboard() {
   // load scam alerts + job posts in parallel
   const [jobRes, scamRes] = await Promise.allSettled([
     supabaseClient.from("job_posts").select("*", { count: "exact" }).limit(200),
-    supabaseClient.from("job_posts").select("*").eq("is_flagged", true).order("created_at", { ascending: false }).limit(50),
+    supabaseClient.from("job_posts").select("*").gte("Scam_score", 0.35).order("Posted_date", { ascending: false }).limit(50),
   ]);
-
+ 
   const jobs     = jobRes.status  === "fulfilled" ? (jobRes.value.data  || []) : [];
   const jobCount = jobRes.status  === "fulfilled" ? (jobRes.value.count || jobs.length) : jobs.length;
   const scams    = scamRes.status === "fulfilled" ? (scamRes.value.data || []) : [];
-
-  const companies = countBy(jobs, ["Company_name","Company","company"]);
+ 
+  const companies = countBy(jobs, ["Company_Salary","Company_name","Company","company"]);
   const locations = countBy(jobs, ["Location","location"]);
-
+ 
   setText("totalJobs",      jobCount);
   setText("totalCompanies", Object.keys(companies).length);
   setText("totalLocations", Object.keys(locations).length);
   setText("totalReports",   0);
-
+ 
   renderJobsTable(jobs);
   renderScamTable(scams);
   renderChart("companyChart",  topEntries(companies), "Jobs by company");
   renderChart("locationChart", topEntries(locations), "Jobs by location");
   loadMLMetrics();
 }
-
+ 
 loadDashboard();
+ 
