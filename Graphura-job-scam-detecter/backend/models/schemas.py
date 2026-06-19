@@ -79,5 +79,12 @@ class ModelMetricsResponse(BaseModel):
     precision: float
     recall: float
     f1_score: float
-    confidence: float
+    confidenloat
     trained_on_samples: int
+
+
+class MLAnalyzeResponse(BaseModel):
+    ml_scam_probability: float
+    ml_scam_score: float
+    ml_risk_level: str
+    is_flagged: bool
