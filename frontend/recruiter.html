@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scam Detect AI — Recruiter &amp; Domain Check</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span>Scam</span>Detect AI</div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="scamanalysis.html">Analyze</a>
+    <a href="recruiter.html" class="active">Recruiter</a>
+    <a href="report.html">Report</a>
+  </div>
+  <span class="api-status" id="apiStatus">● Checking…</span>
+</nav>
+
+<div class="page" style="max-width:900px">
+  <div class="page-header">
+    <h1 style="font-family:var(--serif)">Recruiter <span style="color:var(--gold)">&amp;</span> Domain Verification</h1>
+    <p>Cross-check a recruiter's email/company or a job domain against live Supabase intelligence.</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- Recruiter check -->
+    <div class="card">
+      <div class="card-title">Recruiter Verification</div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Recruiter Email</label>
+        <input id="rEmail" type="email" placeholder="hr@company.com"/>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Company Name</label>
+        <input id="rCompany" type="text" placeholder="Company Pvt Ltd"/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Recruiter Name (optional)</label>
+        <input id="rName" type="text" placeholder="Full name"/>
+      </div>
+      <button class="btn-primary" onclick="runRecruiterCheck()" id="recBtn" style="width:100%">Check Recruiter</button>
+
+      <div id="recError" class="error-panel" style="display:none"></div>
+
+      <div id="recResult" style="display:none;margin-top:16px">
+        <hr class="divider"/>
+        <div class="card-title">Result <span class="source-tag">live API</span></div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="text-align:center">
+            <div id="recScore" class="mono" style="font-size:30px;font-weight:700;line-height:1">—</div>
+            <div style="font-size:11px;color:var(--text3)">risk score</div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span class="badge" id="recBadge">—</span>
+              <span id="recVerified" class="mono" style="font-size:12px"></span>
+            </div>
+            <div id="recName" style="font-size:14px;font-weight:600;color:var(--text)"></div>
+            <div id="recCo" style="font-size:13px;color:var(--text2)"></div>
+          </div>
+        </div>
+
+        <div class="info-grid" id="recInfoGrid" style="margin-bottom:14px"></div>
+
+        <div id="recFlags" style="display:none">
+          <div class="card-title">Risk Flags</div>
+          <div id="recFlagList" class="kw-tags"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Domain check -->
+    <div class="card">
+      <div class="card-title">Domain Intelligence Check</div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Domain Name</label>
+        <input id="dDomain" type="text" placeholder="e.g. quickjobs73891.in"/>
+      </div>
+      <button class="btn-primary" onclick="runDomainCheck()" id="domBtn" style="width:100%">Check Domain</button>
+
+      <div id="domError" class="error-panel" style="display:none"></div>
+
+      <div id="domResult" style="display:none;margin-top:16px">
+        <hr class="divider"/>
+        <div class="card-title">Result <span class="source-tag">live API</span></div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="text-align:center">
+            <div id="domScore" class="mono" style="font-size:30px;font-weight:700;line-height:1">—</div>
+            <div style="font-size:11px;color:var(--text3)">risk score</div>
+          </div>
+          <div>
+            <span class="badge" id="domBadge">—</span>
+            <div id="domName" style="font-size:13px;color:var(--text2);margin-top:4px"></div>
+          </div>
+        </div>
+
+        <div class="info-grid" id="domInfoGrid"></div>
+
+        <div id="domRiskBar" style="margin-top:14px">
+          <div class="breakdown-label" style="margin-bottom:5px">
+            <span>Domain Risk Score</span>
+            <span id="domRiskPct"></span>
+          </div>
+          <div class="breakdown-bar" style="height:8px">
+            <div class="breakdown-bar-fill" id="domBarFill" style="width:0%;height:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Database browser -->
+  <div class="card mt-6">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div class="card-title" style="margin-bottom:0">Recruiter Database Browser</div>
+      <input id="recSearch" type="text" placeholder="Search company or email…" style="width:220px;padding:7px 12px;font-size:13px"/>
+    </div>
+
+    <div class="pill-row" id="recFilterPills">
+      <div class="pill active" data-filter="all">All</div>
+      <div class="pill" data-filter="verified">Verified</div>
+      <div class="pill" data-filter="reported">Has Reports</div>
+      <div class="pill" data-filter="unverified">Unverified</div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Verified</th>
+            <th>Prior Reports</th>
+            <th>LinkedIn</th>
+          </tr>
+        </thead>
+        <tbody id="recTableBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:10px" id="recTableInfo"></div>
+  </div>
+</div>
+
+<script src="scamdetectai.js"></script>
+<script>
+renderApiStatus("#apiStatus");
+
+async function runRecruiterCheck() {
+  const email = qs("#rEmail").value.trim();
+  const company = qs("#rCompany").value.trim();
+  if (!email && !company) { toast("Enter an email or company name.", "error"); return; }
+  const btn = qs("#recBtn");
+  setLoading(btn, true);
+  qs("#recError").style.display = "none";
+
+  let r;
+  try {
+    r = await checkRecruiter(email, company);
+  } catch (err) {
+    qs("#recError").style.display = "";
+    qs("#recError").innerHTML = `<strong>Lookup failed.</strong><br>${err.message}`;
+    setLoading(btn, false);
+    return;
+  }
+  setLoading(btn, false);
+
+  qs("#recResult").style.display = "";
+
+  const sc = r.risk_score || 0;
+  const cls = scoreClass(sc);
+  qs("#recScore").textContent = sc.toFixed(0);
+  qs("#recScore").style.color = scoreColor(sc);
+  qs("#recBadge").textContent = r.risk_level || "—";
+  qs("#recBadge").className = `badge ${cls}`;
+
+  qs("#recVerified").textContent = r.verified ? "✓ VERIFIED" : r.found ? "✗ NOT VERIFIED" : "";
+  qs("#recVerified").style.color = r.verified ? "var(--low)" : "var(--text3)";
+
+  qs("#recName").textContent = r.recruiter_name || (r.found ? "" : "Recruiter not found in database");
+  qs("#recCo").textContent = r.company || "";
+
+  qs("#recInfoGrid").innerHTML = `
+    <div class="info-item"><span class="ik">Email Domain</span><span class="iv">${r.email_domain || "—"}</span></div>
+    <div class="info-item"><span class="ik">Previous Reports</span><span class="iv" style="color:${r.previous_reports > 0 ? 'var(--scam)' : 'var(--low)'}">${r.previous_reports}</span></div>
+    <div class="info-item"><span class="ik">Found in DB</span><span class="iv">${r.found ? "Yes" : "No"}</span></div>
+    <div class="info-item"><span class="ik">LinkedIn</span><span class="iv">${r.linkedin_url ? `<a href="${r.linkedin_url}" target="_blank">View Profile</a>` : "Not linked"}</span></div>
+  `;
+
+  const flags = r.flags || [];
+  if (flags.length) {
+    qs("#recFlags").style.display = "";
+    qs("#recFlagList").innerHTML = flags.map(f => `<span class="kw-tag">${f}</span>`).join("");
+  } else {
+    qs("#recFlags").style.display = "none";
+  }
+}
+
+async function runDomainCheck() {
+  const dom = qs("#dDomain").value.trim().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+  if (!dom) { toast("Enter a domain name to check.", "error"); return; }
+  const btn = qs("#domBtn");
+  setLoading(btn, true);
+  qs("#domError").style.display = "none";
+
+  let r;
+  try {
+    r = await checkDomain(dom);
+  } catch (err) {
+    qs("#domError").style.display = "";
+    qs("#domError").innerHTML = `<strong>Lookup failed.</strong><br>${err.message}`;
+    setLoading(btn, false);
+    return;
+  }
+  setLoading(btn, false);
+
+  qs("#domResult").style.display = "";
+
+  const sc = r.risk_score || 0;
+  const cls = scoreClass(sc);
+  qs("#domScore").textContent = sc.toFixed(0);
+  qs("#domScore").style.color = scoreColor(sc);
+  qs("#domBadge").textContent = r.risk_level || "—";
+  qs("#domBadge").className = `badge ${cls}`;
+  qs("#domName").textContent = r.domain_name || dom;
+
+  qs("#domInfoGrid").innerHTML = r.found ? `
+    <div class="info-item"><span class="ik">Domain Age</span><span class="iv">${r.domain_age_days != null ? r.domain_age_days + " days" : "Unknown"}</span></div>
+    <div class="info-item"><span class="ik">SSL Certificate</span><span class="iv" style="color:${r.ssl_valid ? 'var(--low)' : 'var(--scam)'}">${r.ssl_valid ? "✓ Valid" : "✗ Invalid / Missing"}</span></div>
+    <div class="info-item"><span class="ik">Trust Score</span><span class="iv">${r.trust_score != null ? r.trust_score.toFixed(1) + " / 100" : "—"}</span></div>
+    <div class="info-item"><span class="ik">Blacklisted</span><span class="iv" style="color:${r.blacklisted ? 'var(--scam)' : 'var(--low)'}">${r.blacklisted ? "✗ Yes — DANGER" : "✓ Not blacklisted"}</span></div>
+  ` : `
+    <div class="info-item" style="grid-column:1/-1">
+      <span class="ik">Not in database — live pattern analysis</span>
+      <div class="kw-tags" style="margin-top:8px">
+        ${(r.pattern_flags || []).map(f => `<span class="kw-tag">${f}</span>`).join("") || `<span class="iv">No patterns detected</span>`}
+      </div>
+    </div>
+  `;
+
+  qs("#domRiskPct").textContent = sc.toFixed(1) + "%";
+  qs("#domBarFill").style.width = sc + "%";
+  qs("#domBarFill").style.background = scoreColor(sc);
+}
+
+// ── Recruiter DB Browser — live from Supabase via /recruiters ──────────────
+let allRec = [];
+let recFilter = "all";
+
+async function buildRecTable() {
+  try {
+    const res = await listRecruiters();
+    allRec = res.recruiters || [];
+  } catch (err) {
+    qs("#recTableBody").innerHTML = `<tr><td colspan="6">
+      <div class="empty-state"><div class="es-icon">⚠</div><div class="es-title">Can't load recruiters</div><div class="es-sub">${err.message}</div></div>
+    </td></tr>`;
+    return;
+  }
+  renderRecTable();
+}
+
+function renderRecTable() {
+  if (!allRec.length) {
+    qs("#recTableBody").innerHTML = `<tr><td colspan="6">
+      <div class="empty-state"><div class="es-icon">◎</div><div class="es-title">No recruiters in the database yet</div><div class="es-sub">Recruiter profiles populate here as they're added to Supabase.</div></div>
+    </td></tr>`;
+    qs("#recTableInfo").textContent = "";
+    return;
+  }
+
+  const search = qs("#recSearch").value.toLowerCase();
+  let rows = allRec.filter(r => {
+    const email = (r.email || "").toLowerCase();
+    const company = (r.company || "").toLowerCase();
+    const name = (r.recruiter_name || "").toLowerCase();
+    const ms = !search || email.includes(search) || company.includes(search) || name.includes(search);
+    if (!ms) return false;
+    if (recFilter === "verified") return r.verified;
+    if (recFilter === "reported") return (r.previous_reports || 0) > 0;
+    if (recFilter === "unverified") return !r.verified;
+    return true;
+  });
+
+  qs("#recTableInfo").textContent = `${rows.length} recruiter(s) shown`;
+  qs("#recTableBody").innerHTML = rows.length ? rows.map(r => `<tr>
+    <td class="mono" style="font-size:12px">${r.email || "—"}</td>
+    <td style="color:var(--text)">${r.recruiter_name || "—"}</td>
+    <td>${r.company || "—"}</td>
+    <td style="color:${r.verified ? 'var(--low)' : 'var(--text3)'}">${r.verified ? "✓ Yes" : "—"}</td>
+    <td style="color:${(r.previous_reports||0) > 0 ? 'var(--scam)' : 'var(--text3)'}">${r.previous_reports || 0}</td>
+    <td>${r.linkedin_url ? `<a href="${r.linkedin_url}" target="_blank" style="font-size:12px">View →</a>` : "<span style='color:var(--text3)'>—</span>"}</td>
+  </tr>`).join("") : `<tr><td colspan="6" class="empty">No results.</td></tr>`;
+}
+
+qsa("#recFilterPills .pill").forEach(p => {
+  p.addEventListener("click", () => {
+    qsa("#recFilterPills .pill").forEach(x => x.classList.remove("active"));
+    p.classList.add("active");
+    recFilter = p.dataset.filter;
+    renderRecTable();
+  });
+});
+qs("#recSearch").addEventListener("input", renderRecTable);
+
+// Pre-fill from query params (e.g. coming from the Analyze page)
+const params = new URLSearchParams(location.search);
+if (params.get("email")) { qs("#rEmail").value = params.get("email"); }
+if (params.get("company")) { qs("#rCompany").value = params.get("company"); }
+if (params.get("domain")) { qs("#dDomain").value = params.get("domain"); }
+
+if (params.get("email") || params.get("company")) {
+  setTimeout(() => runRecruiterCheck(), 200);
+} else if (params.get("domain")) {
+  setTimeout(() => runDomainCheck(), 200);
+}
+
+buildRecTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scam Detect AI — Job Scam Detection</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span>Scam</span>Detect AI</div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Dashboard</a>
+    <a href="scamanalysis.html">Analyze</a>
+    <a href="recruiter.html">Recruiter</a>
+    <a href="report.html">Report</a>
+  </div>
+  <span class="api-status" id="apiStatus">● Checking…</span>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 style="font-family:var(--serif)"><span style="color:var(--gold)">Scam Detect AI</span> Dashboard</h1>
+    <p>Live intelligence from <strong id="totalJobs">—</strong> job postings analyzed so far. Every number on this page is computed in real time from Supabase — analyze a job to start populating it.</p>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card danger"><div class="val" id="s-flagged">—</div><div class="lbl">Flagged Scams</div></div>
+    <div class="stat-card warn"><div class="val" id="s-highrisk">—</div><div class="lbl">High Risk Posts</div></div>
+    <div class="stat-card ok"><div class="val" id="s-legit">—</div><div class="lbl">Legitimate Posts</div></div>
+    <div class="stat-card accent"><div class="val" id="s-avgscore">—</div><div class="lbl">Avg Scam Score</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- Risk distribution donut -->
+    <div class="card chart-card">
+      <div class="card-title">Risk Distribution</div>
+      <div class="donut-wrap">
+        <canvas id="riskDonut" width="180" height="180"></canvas>
+        <div class="donut-legend" id="riskLegend"></div>
+      </div>
+    </div>
+    <!-- Score trend -->
+    <div class="card chart-card">
+      <div class="card-title">Recent Scam Score Trend</div>
+      <div id="trendEmpty" class="empty-state" style="padding:30px 10px;display:none">
+        <div class="es-sub">Not enough analyzed jobs yet to show a trend.</div>
+      </div>
+      <div class="trend-strip" id="trendStrip"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text3)">
+        <span>Oldest</span><span>Most recent</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- Top scam reasons -->
+    <div class="card">
+      <div class="card-title">Top Scam Report Reasons</div>
+      <div id="reasonChart" class="reason-chart"></div>
+    </div>
+    <!-- Top flagged companies -->
+    <div class="card">
+      <div class="card-title">Most Impersonated Companies</div>
+      <div id="companyChart" class="reason-chart"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <!-- Top flagged keywords -->
+    <div class="card">
+      <div class="card-title">Top Flagged Keywords</div>
+      <div id="keywordChart" class="reason-chart"></div>
+    </div>
+    <!-- Risk factor breakdown -->
+    <div class="card">
+      <div class="card-title">Avg. Risk Factor Breakdown (Flagged Jobs)</div>
+      <div id="factorChart" class="factor-chart"></div>
+    </div>
+  </div>
+
+  <!-- Job table -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div class="card-title" style="margin-bottom:0">Job Intelligence Feed</div>
+      <div style="display:flex;gap:8px">
+        <input id="searchInput" type="text" placeholder="Search title or company…" style="width:200px;padding:7px 12px;font-size:13px"/>
+        <button class="btn-secondary" onclick="window.location='scamanalysis.html'" style="white-space:nowrap">+ Analyze New</button>
+      </div>
+    </div>
+
+    <div class="pill-row" id="filterPills">
+      <div class="pill active" data-filter="all">All</div>
+      <div class="pill" data-filter="scam">Confirmed Scam</div>
+      <div class="pill" data-filter="high">High Risk</div>
+      <div class="pill" data-filter="medium">Medium Risk</div>
+      <div class="pill" data-filter="low">Low Risk</div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="jobTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Company</th>
+            <th>Location</th>
+            <th>Scam Score</th>
+            <th>Risk</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="jobBody">
+          <tr><td colspan="6" class="empty">Loading jobs…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="demo-data.js"></script>
+<script src="scamdetectai.js"></script>
+<script>
+let allJobs = [];
+let filtered = [];
+let activeFilter = "all";
+
+renderApiStatus("#apiStatus");
+
+function renderChartBars(containerId, data) {
+  const el = qs("#" + containerId);
+  if (!el) return;
+  const entries = Object.entries(data || {});
+  if (!entries.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px 10px">
+      <div class="es-sub">No data yet. This fills in automatically as jobs are analyzed and reported.</div>
+    </div>`;
+    return;
+  }
+  const maxVal = Math.max(...entries.map(([, v]) => v));
+  el.innerHTML = entries.map(([k, v]) => `
+    <div class="reason-row">
+      <span class="reason-name" title="${k}">${k}</span>
+      <div class="reason-bar"><div class="reason-fill" style="width:${(v/maxVal*100).toFixed(1)}%"></div></div>
+      <span class="reason-count">${v}</span>
+    </div>`).join("");
+}
+
+function renderFactorChart(containerId, breakdown) {
+  const el = qs("#" + containerId);
+  if (!el) return;
+  const labels = {
+    keyword_risk: ["Keyword", "var(--scam)"],
+    domain_risk: ["Domain", "var(--high)"],
+    recruiter_risk: ["Recruiter", "var(--medium)"],
+    salary_risk: ["Salary", "var(--gold2)"],
+    report_risk: ["Reports", "var(--low)"],
+  };
+  const entries = Object.entries(breakdown || {}).filter(([k]) => labels[k]);
+  if (!entries.length || entries.every(([, v]) => !v)) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px 10px">
+      <div class="es-sub">No flagged jobs yet — this fills in once postings are analyzed.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = entries.map(([k, v]) => {
+    const [name, color] = labels[k];
+    return `<div class="factor-row">
+      <span class="factor-name">${name}</span>
+      <div class="factor-bar"><div class="factor-fill" style="width:${Math.min(v,100).toFixed(1)}%;background:${color}"></div></div>
+      <span class="factor-val">${v.toFixed(1)}</span>
+    </div>`;
+  }).join("");
+}
+
+function drawDonut(canvasId, segments) {
+  const canvas = qs("#" + canvasId);
+  const ctx = canvas.getContext("2d");
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  const cx = canvas.width / 2, cy = canvas.height / 2, r = Math.min(cx, cy) - 8, inner = r * 0.6;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (total === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,255,255,.08)";
+    ctx.lineWidth = r - inner;
+    ctx.stroke();
+    ctx.fillStyle = "#6b7e95";
+    ctx.font = "12px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("No data", cx, cy + 4);
+    return;
+  }
+
+  let start = -Math.PI / 2;
+  segments.forEach(seg => {
+    if (seg.value <= 0) return;
+    const angle = (seg.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, (r + inner) / 2, start, start + angle);
+    ctx.lineWidth = r - inner;
+    ctx.strokeStyle = seg.color;
+    ctx.stroke();
+    start += angle;
+  });
+
+  ctx.fillStyle = "#f0e9d8";
+  ctx.font = "700 20px 'DM Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(total.toLocaleString(), cx, cy - 2);
+  ctx.fillStyle = "#6b7e95";
+  ctx.font = "10px Inter, sans-serif";
+  ctx.fillText("total", cx, cy + 14);
+}
+
+function renderRiskDonut(stats) {
+  const scam = stats.high_risk_jobs ? Math.min(stats.high_risk_jobs, stats.flagged_jobs || stats.high_risk_jobs) : 0;
+  const flaggedNotHigh = Math.max((stats.flagged_jobs || 0) - (stats.high_risk_jobs || 0), 0);
+  const legit = stats.legit_jobs || 0;
+
+  const segs = [
+    { label: "Confirmed / High Risk", value: stats.high_risk_jobs || 0, color: "#e04040" },
+    { label: "Flagged (Medium)", value: flaggedNotHigh, color: "#e8a83b" },
+    { label: "Legitimate", value: legit, color: "#3dba6e" },
+  ];
+  drawDonut("riskDonut", segs);
+
+  qs("#riskLegend").innerHTML = segs.map(s => `
+    <div class="donut-legend-item">
+      <span class="dot" style="background:${s.color}"></span>
+      <span class="lname">${s.label}</span>
+      <span class="lval">${s.value.toLocaleString()}</span>
+    </div>`).join("");
+}
+
+function renderTrend(recentFlagged) {
+  const strip = qs("#trendStrip");
+  const emptyEl = qs("#trendEmpty");
+  if (!recentFlagged || recentFlagged.length < 2) {
+    strip.style.display = "none";
+    emptyEl.style.display = "";
+    return;
+  }
+  strip.style.display = "flex";
+  emptyEl.style.display = "none";
+  const scores = recentFlagged.map(j => j.score).reverse();
+  const max = Math.max(...scores, 1);
+  strip.innerHTML = scores.map(s => `<div class="trend-bar" style="height:${Math.max((s / max) * 100, 4)}%" title="${s.toFixed(1)}"></div>`).join("");
+}
+
+function renderTable() {
+  const tbody = qs("#jobBody");
+
+  if (!allJobs.length) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="empty-state">
+        <div class="es-icon">◎</div>
+        <div class="es-title">No flagged jobs yet</div>
+        <div class="es-sub">Analyze a job posting to start building your live intelligence feed. Every result is stored in Supabase and shows up here.</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No jobs match this filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(j => {
+    const cls = scoreClass(j.score);
+    return `<tr>
+      <td style="color:var(--text);font-weight:500;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${j.title}">${j.title || "—"}</td>
+      <td class="company">${j.company || "—"}</td>
+      <td style="color:var(--text2);font-size:12px">${j.location || "—"}</td>
+      <td class="mono" style="color:${scoreColor(j.score)}">${j.score.toFixed(1)}</td>
+      <td><span class="badge ${cls}">${riskLabel(j.score).label}</span></td>
+      <td><a href="scamanalysis.html" style="font-size:12px;color:var(--gold2)">Re-analyze →</a></td>
+    </tr>`;
+  }).join("");
+}
+
+function applyFilter() {
+  const search = qs("#searchInput").value.toLowerCase();
+  filtered = allJobs.filter(j => {
+    const matchSearch = !search || (j.title||"").toLowerCase().includes(search) || (j.company||"").toLowerCase().includes(search);
+    const cls = scoreClass(j.score);
+    const matchFilter = activeFilter === "all" || cls === activeFilter;
+    return matchSearch && matchFilter;
+  });
+  renderTable();
+}
+
+async function init() {
+  let stats;
+  let isDemo = false;
+  try {
+    stats = await fetchDashboard();
+  } catch (err) {
+    toast(err.message, "error");
+    qs("#jobBody").innerHTML = `<tr><td colspan="6">
+      <div class="empty-state">
+        <div class="es-icon">⚠</div>
+        <div class="es-title">Can't load dashboard</div>
+        <div class="es-sub">${err.message}</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  // If Supabase genuinely has no analyzed jobs yet, fall back to sample
+  // data (generated by the real scoring model — see demo-data.js) so the
+  // dashboard isn't empty.
+  if (!stats.total_jobs && typeof DEMO_DASHBOARD_DATA !== "undefined") {
+    stats = DEMO_DASHBOARD_DATA;
+    isDemo = true;
+  }
+
+  qs("#totalJobs").textContent = (stats.total_jobs || 0).toLocaleString();
+  qs("#s-flagged").textContent = (stats.flagged_jobs || 0).toLocaleString();
+  qs("#s-highrisk").textContent = (stats.high_risk_jobs || 0).toLocaleString();
+  qs("#s-legit").textContent = (stats.legit_jobs || 0).toLocaleString();
+  qs("#s-avgscore").textContent = (stats.avg_scam_score || 0).toFixed(1) + "%";
+
+  renderRiskDonut(stats);
+  renderChartBars("reasonChart", stats.report_reasons || {});
+  renderChartBars("companyChart", stats.top_flagged_domains || {});
+  renderChartBars("keywordChart", stats.top_keywords || {});
+  renderFactorChart("factorChart", stats.avg_risk_breakdown || {});
+  renderTrend(stats.recent_flagged || []);
+
+  allJobs = [
+    ...(stats.recent_flagged || []).map(j => ({ title: j.title, company: j.company, location: j.location, score: j.score })),
+    ...(isDemo ? (stats.recent_legit || []).map(j => ({ title: j.title, company: j.company, location: j.location, score: j.score })) : []),
+  ];
+  filtered = allJobs;
+  renderTable();
+}
+
+qsa("#filterPills .pill").forEach(p => {
+  p.addEventListener("click", () => {
+    qsa("#filterPills .pill").forEach(x => x.classList.remove("active"));
+    p.classList.add("active");
+    activeFilter = p.dataset.filter;
+    applyFilter();
+  });
+});
+
+qs("#searchInput").addEventListener("input", applyFilter);
+
+init();
+</script>
+</body>
+</html>

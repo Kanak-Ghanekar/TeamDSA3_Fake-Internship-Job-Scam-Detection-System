@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scam Detect AI — Analyze Job Post</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span>Scam</span>Detect AI</div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="scamanalysis.html" class="active">Analyze</a>
+    <a href="recruiter.html">Recruiter</a>
+    <a href="report.html">Report</a>
+  </div>
+  <span class="api-status" id="apiStatus">● Checking…</span>
+</nav>
+
+<div class="page" style="max-width:880px">
+  <div class="page-header">
+    <h1 style="font-family:var(--serif)">Analyze <span style="color:var(--gold)">Job Post</span></h1>
+    <p>Paste a job posting URL from any platform for instant auto-analysis, or enter the details manually. Every score is computed live against our risk model and Supabase intelligence — nothing here is pre-recorded.</p>
+  </div>
+
+  <div class="card">
+    <div class="input-tabs">
+      <div class="input-tab active" data-mode="url">Paste Job URL</div>
+      <div class="input-tab" data-mode="manual">Enter Manually</div>
+    </div>
+
+    <!-- URL mode -->
+    <div id="urlMode">
+      <div class="form-group">
+        <label>Job Posting URL</label>
+        <div class="url-import-row">
+          <input id="fJobUrl" type="text" placeholder="https://www.linkedin.com/jobs/view/... or any job posting link"/>
+          <button class="btn-primary" id="scrapeBtn" onclick="runUrlAnalysis()" style="white-space:nowrap">Fetch &amp; Analyze</button>
+        </div>
+        <p class="url-import-hint">We fetch the page directly, extract the title, company, location, salary and description automatically, then run the full risk analysis. Works with LinkedIn, Naukri, Indeed, Internshala, and most company career pages.</p>
+      </div>
+
+      <div id="scrapePreview" class="scrape-preview" style="display:none"></div>
+      <div id="urlError" class="error-panel" style="display:none"></div>
+    </div>
+
+    <!-- Manual mode -->
+    <div id="manualMode" style="display:none">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Job Title *</label>
+          <input id="fTitle" type="text" placeholder="e.g. Data Science Intern"/>
+        </div>
+        <div class="form-group">
+          <label>Company Name</label>
+          <input id="fCompany" type="text" placeholder="e.g. TechCorp India Pvt Ltd"/>
+        </div>
+        <div class="form-group">
+          <label>Salary / Stipend</label>
+          <input id="fSalary" type="text" placeholder="e.g. ₹15000 or 25000"/>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input id="fLocation" type="text" placeholder="e.g. Bengaluru, Karnataka"/>
+        </div>
+        <div class="form-group">
+          <label>Source URL</label>
+          <input id="fUrl" type="text" placeholder="https://example.com/job/123"/>
+        </div>
+        <div class="form-group">
+          <label>Recruiter Email</label>
+          <input id="fEmail" type="email" placeholder="hr@company.com"/>
+        </div>
+        <div class="form-group full">
+          <label>Job Description *</label>
+          <textarea id="fDesc" rows="6" placeholder="Paste the full job description here. The more text, the more accurate the analysis…"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-primary" id="analyzeBtn" onclick="runAnalysis()">Analyze Job Post</button>
+        <button class="btn-secondary" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="resultArea" style="display:none">
+    <div class="card mt-4" id="resultCard">
+      <div class="card-title">Analysis Result <span class="source-tag" id="sourceTag">live API</span></div>
+
+      <!-- Score ring + risk level -->
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--bg3)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="40" fill="none" id="ringCircle"
+              stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="251.2" stroke-dashoffset="251.2"
+              style="transition:stroke-dashoffset .8s ease"/>
+          </svg>
+          <div class="ring-val"><span id="ringScore">—</span><small>/ 100</small></div>
+        </div>
+        <div class="score-meta">
+          <h2 id="riskTitle">—</h2>
+          <p id="riskRec" style="margin-top:6px"></p>
+          <div style="margin-top:10px"><span class="badge" id="riskBadge">—</span></div>
+        </div>
+      </div>
+
+      <!-- Risk breakdown -->
+      <hr class="divider"/>
+      <div class="card-title">Risk Breakdown</div>
+      <div class="breakdown-grid" id="breakdownGrid"></div>
+
+      <!-- Flagged keywords -->
+      <div id="kwSection" style="display:none">
+        <hr class="divider"/>
+        <div class="card-title">Flagged Phrases Detected</div>
+        <div class="kw-tags" id="kwTags"></div>
+      </div>
+
+      <!-- Domain info -->
+      <div id="domainSection" style="display:none">
+        <hr class="divider"/>
+        <div class="card-title">Domain Intelligence <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0" id="domainSrcNote"></span></div>
+        <div class="info-grid" id="domainGrid"></div>
+      </div>
+
+      <!-- Recruiter info -->
+      <div id="recruiterSection" style="display:none">
+        <hr class="divider"/>
+        <div class="card-title">Recruiter Intelligence</div>
+        <div class="info-grid" id="recruiterGrid"></div>
+      </div>
+
+      <!-- Actions -->
+      <hr class="divider"/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="checkDomainBtn()">Check Domain</button>
+        <button class="btn-secondary" onclick="checkRecruiterBtn()">Check Recruiter</button>
+        <button class="btn-danger" onclick="goReport()">Report This Job</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card mt-6" id="historyCard" style="display:none">
+    <div class="card-title">Recent Analyses (this session)</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Company</th><th>Score</th><th>Risk</th><th>Time</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="scamdetectai.js"></script>
+<script>
+let history = [];
+let lastTitle = "", lastCompany = "";
+
+renderApiStatus("#apiStatus");
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+qsa(".input-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    qsa(".input-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const mode = tab.dataset.mode;
+    qs("#urlMode").style.display = mode === "url" ? "" : "none";
+    qs("#manualMode").style.display = mode === "manual" ? "" : "none";
+  });
+});
+
+function clearForm() {
+  ["fTitle","fCompany","fSalary","fLocation","fUrl","fEmail","fDesc"].forEach(id => {
+    const el = qs("#" + id);
+    if (el) el.value = "";
+  });
+  qs("#resultArea").style.display = "none";
+}
+
+function renderRing(score) {
+  const circ = 251.2;
+  const offset = circ - (score / 100) * circ;
+  const c = scoreColor(score);
+  const ring = qs("#ringCircle");
+  ring.style.stroke = c;
+  ring.style.strokeDashoffset = offset;
+  qs("#ringScore").textContent = score.toFixed(0);
+  qs("#ringScore").style.color = c;
+}
+
+function renderBreakdown(bd) {
+  const keys = [
+    ["keyword_risk", "Keyword Risk"],
+    ["domain_risk", "Domain Risk"],
+    ["recruiter_risk", "Recruiter Risk"],
+    ["salary_risk", "Salary Anomaly"],
+    ["report_risk", "Report History"],
+  ];
+  qs("#breakdownGrid").innerHTML = keys.map(([k, label]) => {
+    const val = bd[k] || 0;
+    return `<div class="breakdown-item">
+      <div class="breakdown-label"><span>${label}</span><span style="color:${scoreColor(val)}">${val.toFixed(0)}%</span></div>
+      <div class="breakdown-bar"><div class="breakdown-bar-fill" style="width:${val}%;background:${scoreColor(val)}"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderDomain(dinfo) {
+  if (!dinfo || Object.keys(dinfo).length === 0) {
+    qs("#domainSection").style.display = "none";
+    return;
+  }
+  qs("#domainSection").style.display = "";
+
+  if (dinfo.found_in_database) {
+    qs("#domainSrcNote").textContent = "(found in Supabase domain_reputation)";
+    qs("#domainGrid").innerHTML = `
+      <div class="info-item"><span class="ik">Domain Age</span><span class="iv">${dinfo.domain_age_days ?? "?"} days</span></div>
+      <div class="info-item"><span class="ik">SSL Valid</span><span class="iv" style="color:${dinfo.ssl_valid ? 'var(--low)' : 'var(--scam)'}">${dinfo.ssl_valid ? "✓ Yes" : "✗ No"}</span></div>
+      <div class="info-item"><span class="ik">Trust Score</span><span class="iv">${(dinfo.trust_score ?? 0).toFixed ? dinfo.trust_score.toFixed(1) : dinfo.trust_score}</span></div>
+      <div class="info-item"><span class="ik">Blacklisted</span><span class="iv" style="color:${dinfo.blacklisted ? 'var(--scam)' : 'var(--low)'}">${dinfo.blacklisted ? "✗ Yes" : "✓ No"}</span></div>
+    `;
+  } else {
+    // Domain isn't in our database yet — instead of showing fabricated
+    // facts (fake "Domain Age: 0 days"), show the real, computed-on-the-spot
+    // pattern analysis of the domain name itself (TLD, digit ratio,
+    // hyphens, known job-platform recognition). This is genuine signal,
+    // not a placeholder.
+    qs("#domainSrcNote").textContent = "(not yet in our database — showing live pattern analysis)";
+    const flags = dinfo.pattern_flags || [];
+    qs("#domainGrid").innerHTML = `
+      <div class="info-item" style="grid-column:1/-1">
+        <span class="ik">Domain Name Pattern Analysis</span>
+        <div class="kw-tags" style="margin-top:8px">
+          ${flags.map(f => `<span class="kw-tag">${f}</span>`).join("") || `<span class="iv">No patterns detected</span>`}
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderRecruiter(rinfo) {
+  if (!rinfo || Object.keys(rinfo).length === 0) {
+    qs("#recruiterSection").style.display = "none";
+    return;
+  }
+  qs("#recruiterSection").style.display = "";
+  const rows = [];
+  if (rinfo.recruiter_name) rows.push(["Name", rinfo.recruiter_name]);
+  if (rinfo.company) rows.push(["Company on File", rinfo.company]);
+  rows.push(["Free Email Provider", rinfo.free_email ? "Yes" : "No"]);
+  if ("verified" in rinfo) rows.push(["Verified", rinfo.verified ? "✓ Yes" : "✗ No"]);
+  if ("previous_reports" in rinfo) rows.push(["Previous Reports", rinfo.previous_reports]);
+  if (rinfo.prior_reports_for_company) rows.push(["Company Scam Reports", rinfo.prior_reports_for_company]);
+  qs("#recruiterGrid").innerHTML = rows.map(([k, v]) =>
+    `<div class="info-item"><span class="ik">${k}</span><span class="iv">${v}</span></div>`
+  ).join("");
+}
+
+function renderResult(result, sourceLabel) {
+  qs("#resultArea").style.display = "";
+  qs("#sourceTag").textContent = sourceLabel || "live API";
+
+  renderRing(result.scam_score);
+  const cls = scoreClass(result.scam_score);
+  qs("#riskTitle").textContent = result.risk_level;
+  qs("#riskTitle").style.color = scoreColor(result.scam_score);
+  qs("#riskBadge").textContent = result.risk_level;
+  qs("#riskBadge").className = `badge ${cls}`;
+  qs("#riskRec").textContent = result.recommendation || "";
+
+  if (result.risk_breakdown) renderBreakdown(result.risk_breakdown);
+
+  const kws = result.flagged_keywords || [];
+  if (kws.length) {
+    qs("#kwSection").style.display = "";
+    qs("#kwTags").innerHTML = kws.map(k => `<span class="kw-tag">${k}</span>`).join("");
+  } else {
+    qs("#kwSection").style.display = "none";
+  }
+
+  renderDomain(result.domain_info);
+  renderRecruiter(result.recruiter_info);
+
+  history.unshift({ title: lastTitle || "(untitled)", company: lastCompany || "—", score: result.scam_score, cls, time: new Date().toLocaleTimeString() });
+  if (history.length > 10) history.pop();
+  renderHistory();
+
+  qs("#resultCard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ── Manual analysis ──────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const title = qs("#fTitle").value.trim();
+  const desc = qs("#fDesc").value.trim();
+  if (!title && !desc) { toast("Please enter at least a title or description.", "error"); return; }
+
+  const btn = qs("#analyzeBtn");
+  setLoading(btn, true);
+
+  let domain = "";
+  const url = qs("#fUrl").value.trim();
+  if (url) {
+    try { domain = new URL(url.match(/^https?:\/\//) ? url : "https://" + url).hostname.replace(/^www\./, ""); } catch(_) {}
+  }
+
+  lastTitle = title; lastCompany = qs("#fCompany").value.trim();
+
+  const fields = {
+    title, company: lastCompany,
+    description: desc, salary: qs("#fSalary").value,
+    location: qs("#fLocation").value, url,
+    domain, recruiterEmail: qs("#fEmail").value,
+  };
+
+  try {
+    const result = await analyzeJob(fields);
+    renderResult(result, "live API");
+  } catch (err) {
+    toast(err.message, "error");
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── URL paste + auto-scrape analysis ─────────────────────────────────────────
+async function runUrlAnalysis() {
+  const url = qs("#fJobUrl").value.trim();
+  if (!url) { toast("Paste a job posting URL first.", "error"); return; }
+
+  const btn = qs("#scrapeBtn");
+  setLoading(btn, true);
+  qs("#urlError").style.display = "none";
+  qs("#scrapePreview").style.display = "none";
+
+  try {
+    const res = await analyzeJobByUrl(url);
+
+    lastTitle = res.scraped_title || "(untitled)";
+    lastCompany = res.scraped_company || "—";
+
+    qs("#scrapePreview").style.display = "";
+    qs("#scrapePreview").innerHTML = `
+      <div class="sp-title">Extracted from page (${res.extraction_method === "jsonld" ? "structured data" : "page content"})</div>
+      <div class="sp-grid">
+        <div class="sp-row"><span class="sp-k">Title</span><span class="sp-v">${res.scraped_title || "—"}</span></div>
+        <div class="sp-row"><span class="sp-k">Company</span><span class="sp-v">${res.scraped_company || "—"}</span></div>
+        <div class="sp-row"><span class="sp-k">Location</span><span class="sp-v">${res.scraped_location || "—"}</span></div>
+        <div class="sp-row"><span class="sp-k">Salary</span><span class="sp-v">${res.scraped_salary || "—"}</span></div>
+        <div class="sp-row"><span class="sp-k">Domain</span><span class="sp-v">${res.domain || "—"}</span></div>
+      </div>
+      ${res.partial_extraction ? `<div class="sp-warn">⚠ Some fields could not be found on this page — the score below is based on what we could extract. Switch to "Enter Manually" to fill in the rest for a more accurate result.</div>` : ""}
+    `;
+
+    renderResult(res.analysis, "auto-scraped");
+  } catch (err) {
+    qs("#urlError").style.display = "";
+    qs("#urlError").innerHTML = `<strong>Couldn't analyze that URL.</strong><br>${err.message}`;
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+function renderHistory() {
+  if (!history.length) return;
+  qs("#historyCard").style.display = "";
+  qs("#historyBody").innerHTML = history.map(h => `<tr>
+    <td style="color:var(--text)">${h.title}</td>
+    <td>${h.company}</td>
+    <td class="mono" style="color:${scoreColor(h.score)}">${h.score.toFixed(1)}</td>
+    <td><span class="badge ${h.cls}">${riskLabel(h.score).label}</span></td>
+    <td style="color:var(--text3)">${h.time}</td>
+  </tr>`).join("");
+}
+
+function checkDomainBtn() {
+  const url = (qs("#fJobUrl").value || qs("#fUrl").value || "").trim();
+  let dom = "";
+  if (url) { try { dom = new URL(url.match(/^https?:\/\//) ? url : "https://" + url).hostname.replace(/^www\./,""); } catch(_){} }
+  if (!dom) { toast("Enter a job URL first to extract the domain.", "warn"); return; }
+  window.location = `recruiter.html?domain=${encodeURIComponent(dom)}`;
+}
+
+function checkRecruiterBtn() {
+  const email = qs("#fEmail").value.trim();
+  const company = qs("#fCompany").value.trim() || lastCompany;
+  if (!email && !company) { toast("Enter a recruiter email or company to check.", "warn"); return; }
+  window.location = `recruiter.html?email=${encodeURIComponent(email)}&company=${encodeURIComponent(company)}`;
+}
+
+function goReport() {
+  window.location = `report.html?title=${encodeURIComponent(lastTitle)}&company=${encodeURIComponent(lastCompany)}`;
+}
+
+// Enter key triggers fetch in URL mode
+qs("#fJobUrl").addEventListener("keydown", e => { if (e.key === "Enter") runUrlAnalysis(); });
+</script>
+</body>
+</html>

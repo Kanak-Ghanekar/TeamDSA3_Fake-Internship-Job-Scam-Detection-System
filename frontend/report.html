@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Scam Detect AI — Report a Scam</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span>Scam</span>Detect AI</div>
+  <div class="nav-links">
+    <a href="index.html">Dashboard</a>
+    <a href="scamanalysis.html">Analyze</a>
+    <a href="recruiter.html">Recruiter</a>
+    <a href="report.html" class="active">Report</a>
+  </div>
+  <span class="api-status" id="apiStatus">● Checking…</span>
+</nav>
+
+<div class="page" style="max-width:760px">
+  <div class="page-header">
+    <h1 style="font-family:var(--serif)">Report a <span style="color:var(--gold)">Scam Job</span></h1>
+    <p>Help protect the community by reporting fake job postings or fraudulent internship offers. Reports are saved to the live database and immediately factor into future risk scores.</p>
+  </div>
+
+  <!-- Report form -->
+  <div class="card">
+    <div class="card-title">Scam Report Form</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Job Title</label>
+        <input id="rpTitle" type="text" placeholder="Title of the scam job post"/>
+      </div>
+      <div class="form-group">
+        <label>Company / Org Name</label>
+        <input id="rpCompany" type="text" placeholder="Company that posted it"/>
+      </div>
+      <div class="form-group full">
+        <label>Report Reason *</label>
+        <select id="rpReason">
+          <option value="">— Select a reason —</option>
+          <option>Fake Job</option>
+          <option>Fake Internship</option>
+          <option>Asking Bank Details</option>
+          <option>Telegram Scam</option>
+          <option>WhatsApp Scam</option>
+          <option>Duplicate Job</option>
+          <option>Spam Posting</option>
+          <option>Identity Theft</option>
+          <option>Fake HR Call</option>
+          <option>Asking OTP</option>
+          <option>Fraudulent Offer Letter</option>
+          <option>No Response After Payment</option>
+          <option>Registration Fee Required</option>
+          <option>Training Fee Fraud</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Your Comments</label>
+        <textarea id="rpComment" rows="4" placeholder="Describe what happened in detail — the more specific, the more helpful."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Severity (1 = Minor, 5 = Very Serious)</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+          <input type="range" id="rpSeverity" min="1" max="5" value="3" style="flex:1;background:transparent;width:auto;padding:0;border:none"
+            oninput="qs('#sevVal').textContent = this.value; updateSevColor(this.value)"/>
+          <span id="sevVal" class="mono" style="font-size:18px;font-weight:700;min-width:20px;color:var(--medium)">3</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:2px">
+          <span>Minor</span><span>Moderate</span><span>Very Serious</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Your Email (optional — for follow-up)</label>
+        <input id="rpEmail" type="email" placeholder="your@email.com"/>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-primary" onclick="submitScamReport()" id="reportBtn">Submit Report</button>
+      <button class="btn-secondary" onclick="clearReport()">Clear</button>
+    </div>
+
+    <div id="reportError" class="error-panel" style="display:none"></div>
+
+    <!-- Success message -->
+    <div id="successMsg" style="display:none;margin-top:16px;padding:16px;background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.30);border-radius:var(--radius2)">
+      <div style="font-weight:600;color:var(--low)">✓ Report submitted</div>
+    </div>
+  </div>
+</div>
+
+<script src="scamdetectai.js"></script>
+<script>
+renderApiStatus("#apiStatus");
+
+// Pre-fill from URL params
+const params = new URLSearchParams(location.search);
+if (params.get("title")) qs("#rpTitle").value = params.get("title");
+if (params.get("company")) qs("#rpCompany").value = params.get("company");
+
+function updateSevColor(v) {
+  const colors = ["","var(--low)","var(--low)","var(--medium)","var(--high)","var(--scam)"];
+  qs("#sevVal").style.color = colors[v] || "var(--text)";
+}
+
+function clearReport() {
+  qs("#rpTitle").value = "";
+  qs("#rpCompany").value = "";
+  qs("#rpReason").value = "";
+  qs("#rpComment").value = "";
+  qs("#rpSeverity").value = "3";
+  qs("#sevVal").textContent = "3";
+  qs("#rpEmail").value = "";
+  qs("#successMsg").style.display = "none";
+}
+
+async function submitScamReport() {
+  const reason = qs("#rpReason").value;
+  if (!reason) { toast("Please select a report reason.", "error"); return; }
+
+  const btn = qs("#reportBtn");
+  setLoading(btn, true);
+  qs("#reportError").style.display = "none";
+  qs("#successMsg").style.display = "none";
+
+  const payload = {
+    job_title: qs("#rpTitle").value.trim() || null,
+    company_name: qs("#rpCompany").value.trim() || null,
+    report_reason: reason,
+    user_comment: qs("#rpComment").value.trim() || null,
+    severity: parseInt(qs("#rpSeverity").value),
+    reporter_email: qs("#rpEmail").value.trim() || null,
+  };
+
+  let result;
+  try {
+    result = await submitReport(payload);
+  } catch (err) {
+    qs("#reportError").style.display = "";
+    qs("#reportError").innerHTML = `<strong>Couldn't submit report.</strong><br>${err.message}`;
+    setLoading(btn, false);
+    return;
+  }
+  setLoading(btn, false);
+
+  if (result.saved_to_database === false) {
+    // The report was NOT written to Supabase — be honest about it instead
+    // of showing a misleading success state. It won't appear in the
+    // dashboard or report database until this is resolved.
+    qs("#reportError").style.display = "";
+    qs("#reportError").innerHTML = `<strong>⚠ Report saved, but not to the shared database.</strong><br>${result.message}`;
+    toast("Report saved locally only — it won't show up in the community feed yet.", "error");
+    return;
+  }
+
+  qs("#successMsg").style.display = "";
+  toast("Report submitted. Thank you!", "success");
+}
+</script>
+</body>
+</html>
